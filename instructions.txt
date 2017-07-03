@@ -1,0 +1,10 @@
+Instructions
+
+Please run the DB script on your location sql machine. and modify the connection string accordingly on .config file.
+Wanted to add compact DB and attach to application but i didnt have time unfortunately.
+ 
+Please 
+
+
+
+
