@@ -13,48 +13,76 @@
 <head>
     <meta name="viewport" content="width=device-width" />
     <title>Index</title>
+
+    <link href="//cdn.muicss.com/mui-latest/css/mui.min.css" rel="stylesheet" type="text/css" />
+    <link href="~/Content/style.css" rel="stylesheet" />
+    <script src="//cdn.muicss.com/mui-latest/js/mui.min.js"></script>
 </head>
 <body>
-    <div>
-        <h2>Please Enter ID Number</h2>
-    </div>
-    <div>
+    <header class="mui-appbar mui--z1">
+        <div class="mui-container">
+            <table width="100%">
+                <tr class="mui--appbar-height">
+                    <td class="mui--text-title">ID Validator</td>
+                    <td align="right">
+                        <ul class="mui-list--inline mui--text-body2">
+                            <li><a href="#">Login</a></li>
+                        </ul>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </header>
+
+    <div id="content-wrapper" class="mui--text-center">
+        <div class="mui--appbar-height"></div>
+        <br>
+        <br>
+        <div class="mui--text-display3">Please Enter ID Number</div>
+        <br>
+        <br>
+
         @model MyValidatorApp.ViewModel.IdValidatorModel
         @using (Html.BeginForm("Index", "IdValidator"))
         {
-            @Html.TextBoxFor(x => x.IdNumber, new { type = "number", required = "required" })
-            @Html.ValidationMessageFor(x => x.IdNumber)
-            <br />
-            <div>
-                <input type="submit" />
+            <div class="mui-textfield idTextBox">
+                @Html.TextBoxFor(x => x.IdNumber, new { type = "number", required = "required" })
+                @Html.ValidationMessageFor(x => x.IdNumber)
             </div>
 
-
+            <br />
+            <br />
+            <div>
+                <input class="mui-btn mui-btn--raised" type="submit" />
+            </div>
         }
-
+      
     </div>
-    <br />
-    <br />
-    <table cellpadding="2" cellspacing="2" border="1">
-        <tr>
-            <th>IdNumber</th>
-            <th>DateOfBirth</th>
-            <th>Gender</th>
-            <th>Citizenship</th>
-        </tr>
-        @foreach (var p in ViewBag.result)
-        {
+        <table class="mui-table mui-table--bordered userTable">
+            <thead>
+                <tr>
+                    <th>IdNumber</th>
+                    <th>DateOfBirth</th>
+                    <th>Gender</th>
+                    <th>Citizenship</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in ViewBag.result)
+                {
+                    <tr>
+                        <td>@p.IdNumber</td>
+                        <td>@p.DateOfBirth</td>
+                        <td>@p.Gender</td>
+                        <td>@p.Citizenship</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
 
-            <tr>
-                <td>@p.IdNumber</td>
-                <td>@p.DateOfBirth</td>
-                <td>@p.Gender</td>
-                <td>@p.Citizenship</td>
-            </tr>
-        }
-    </table>
-
-    <div name="Errors">
+        <br />
+        <br />
+    <div name="Errors" class="mui--text-center">
         <ul>
             @foreach (var error in ViewBag.Error)
             {
@@ -62,17 +90,8 @@
             }
         </ul>
     </div>
-    <style>
-        li::marker {
-            color: black; /* bullet color */
-        }
 
-        li {
-            color: red; /* text color */
-        }
-    </style>
-
-
-
+      
+  
 </body>
 </html>

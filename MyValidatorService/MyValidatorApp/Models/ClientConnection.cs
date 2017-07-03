@@ -16,7 +16,7 @@ namespace MyValidatorApp.Models
     {
         private const string _method = "POST";
         private const string _ContentType = "application/json";
-        private const string _ServiceURL = "http://localhost:53776/api/";
+        private const string _ServiceURL = "http://localhost:61067/";
         private StreamReader _reader;
         private WebResponse _response;
         private Stream _dataStream;
