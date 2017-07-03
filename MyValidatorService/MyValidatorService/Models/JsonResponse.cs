@@ -2,13 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using MyValidatorService.Database;
 
 namespace MyValidatorService.Models
 {
     public class JsonResponse
     {
         public bool Valid { get; set; }
-        public UserDetails UserDetails { get; set; }
-        public List<string> ErrorLists { get; set; }
+        public UserDetail UserDetails { get; set; }
+        public IList<ErrorLists> ErrorLists { get; set; }
     }
 }

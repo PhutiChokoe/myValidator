@@ -1,27 +1,47 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Web.Http;
+﻿
+using System;
+using System.Web.Mvc;
+using MyValidatorService.Interfaces;
 using MyValidatorService.Models;
-using Newtonsoft.Json;
+using NLog;
 
 namespace MyValidatorService.Controllers
 {
-    public class IdValidatorController : ApiController
+    public class IdValidatorController : Controller 
     {
-        private readonly IdValidator _validateId = new IdValidator();
-        public string Get()
+        private IdValidator _validateId = new IdValidator();
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        private IDbHandler _IDbHandler { get; set; }
+        [HttpGet]
+        public ActionResult Index()
         {
-            return "validator api runnning";
-        }
+            try
+            {
+                _IDbHandler = new DbHandler();
+                var results = _IDbHandler.GetUserDetails();
+                return Json(results, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                Logger.Fatal(ex.Message);
+                throw;
+            }
 
-      
-        public JsonResponse Post([FromBody] dynamic request)
+        }
+        [HttpPost]
+        public ActionResult Index(string id)
         {
-            
-            return _validateId.ValidateId(request.id.ToString());
+            try
+            {
+                var results = _validateId.ValidateId(id);
+                return Json(results, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                Logger.Fatal(ex.Message);
+                throw;
+            }
+
         }
 
 

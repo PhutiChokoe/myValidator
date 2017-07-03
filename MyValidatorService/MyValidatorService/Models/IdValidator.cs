@@ -3,18 +3,23 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Web;
+using MyValidatorService.Database;
 using MyValidatorService.Enums;
+using MyValidatorService.Interfaces;
 using NLog;
 
 namespace MyValidatorService.Models
 {
-    public class IdValidator
+    public class IdValidator 
     {
         private const string DateFormat = "yyMMdd";
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-        private readonly List<string> _errorList = new List<string>();
+        private readonly List<ErrorLists> _errorList = new List<ErrorLists>();
         private readonly IdBreakDown _id = new IdBreakDown();
-        private readonly UserDetails _userDetails = new UserDetails();
+        private readonly UserDetail _userDetails = new UserDetail();
+        private IDbHandler _iDbHandler { get; set; }
+
+
 
 
         public bool IsIdLengthValid(string id)
@@ -23,13 +28,13 @@ namespace MyValidatorService.Models
             {
                 if (id.Length != 13)
                 {
-                    _errorList.Add(ErrorList.InCorrectIdLength.ToString());
+                    _errorList.Add(new ErrorLists {error = ErrorList.InCorrectIdLength.ToString()});
                     return false;
                 }
 
                 else
                 {
-                    _userDetails.IdNumber = long.Parse(id);
+                    _userDetails.Id = long.Parse(id);
                     BreakDownId(id);
                     return true;
                 }
@@ -52,36 +57,28 @@ namespace MyValidatorService.Models
 
         public JsonResponse ValidateId(string id)
         {
-            if (IsIdLengthValid(id))
-            {
-                IsSequenceCorrect(id);
-                IsCitizenshipValid();
-                IsDateFormatValid();
-                IsGenderTypeCorrect();
-                ControlDigitTest(id);
-            }
-
-            if (_errorList.Count == 0)
-                return new JsonResponse { ErrorLists = _errorList, UserDetails = _userDetails, Valid = true };
-            else
-                return new JsonResponse { ErrorLists = _errorList, UserDetails = null, Valid = false };
-        }
-
-        public void IsCitizenshipValid()
-        {
             try
             {
-                switch (_id.Citizenship)
+                _iDbHandler = new DbHandler();
+                if (IsIdLengthValid(id))
                 {
-                    case "0":
-                        _userDetails.Citizenship = CitizenshipType.SouthAfrican.ToString();
-                        break;
-                    case "1":
-                        _userDetails.Citizenship = CitizenshipType.Other.ToString();
-                        break;
-                    default:
-                        _errorList.Add(ErrorList.IncorrectCitizenType.ToString());
-                        break;
+                    IsSequenceCorrect(id);
+                    IsCitizenshipValid(_id.Citizenship);
+                    IsDateFormatValid(_id.Date);
+                    IsGenderTypeCorrect(_id.Gender);
+                    ControlDigitTest(id);
+                }
+
+                if (_errorList.Count == 0)
+                {
+                    _iDbHandler.SaveUserDetails(_userDetails);
+                    return new JsonResponse { ErrorLists = _errorList, UserDetails = _userDetails, Valid = true };
+                }
+
+                else
+                {
+                    return new JsonResponse { ErrorLists = _errorList, UserDetails = null, Valid = false };
+
                 }
             }
             catch (Exception ex)
@@ -91,17 +88,50 @@ namespace MyValidatorService.Models
             }
         }
 
-        public void IsDateFormatValid()
+        public bool IsCitizenshipValid(string Citizenship)
+        {
+            try
+            {
+                switch (Citizenship)
+                {
+                    case "0":
+                        _userDetails.Citizenship = CitizenshipType.SouthAfrican.ToString();
+                        return true;
+                        
+                    case "1":
+                        _userDetails.Citizenship = CitizenshipType.Other.ToString();
+                        return true;
+                       
+                    default:
+                        
+                        _errorList.Add(new ErrorLists { error = ErrorList.IncorrectCitizenType.ToString() });
+                        return false;
+                       
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Fatal(ex.Message);
+                throw;
+            }
+        }
+
+        public bool IsDateFormatValid(string Date)
         {
             DateTime parsedDate;
             try
             {
-                var isValidFormat = DateTime.TryParseExact(_id.Date, DateFormat, new CultureInfo("en-US"),
+                var isValidFormat = DateTime.TryParseExact(Date, DateFormat, new CultureInfo("en-US"),
                     DateTimeStyles.AdjustToUniversal, out parsedDate);
                 if (!isValidFormat)
-                    _errorList.Add(ErrorList.IncorrectDateFormat.ToString());
+                { _errorList.Add(new ErrorLists { error = ErrorList.IncorrectDateFormat.ToString() });
+                    return false;
+                }
                 else
-                    _userDetails.DateOfBirth = parsedDate.ToShortDateString();
+                { _userDetails.DateOfBirth = parsedDate;
+                    return true;
+                }
+                 
             }
             catch (Exception ex)
             {
@@ -110,14 +140,21 @@ namespace MyValidatorService.Models
             }
         }
 
-        public void IsGenderTypeCorrect()
+        public bool IsGenderTypeCorrect(string Gender)
         {
             try
             {
-                if (int.Parse(_id.Gender) > 9999 && int.Parse(_id.Gender) < 0)
-                    _errorList.Add(ErrorList.IncorrectGenderType.ToString());
+                if (int.Parse(Gender) > 9999 || int.Parse(Gender) < 0)
+                {
+                    _errorList.Add(new ErrorLists { error = ErrorList.IncorrectGenderType.ToString() });
+                    return false;
+                }
                 else
-                    _userDetails.Gender = int.Parse(_id.Gender) < 5000 ? "Female" : "Male";
+                {
+                    _userDetails.Gender = int.Parse(Gender) < 5000 ? "Female" : "Male";
+                    return true;
+                }
+                
             }
             catch (Exception ex)
             {
@@ -125,15 +162,26 @@ namespace MyValidatorService.Models
                 throw;
             }
         }
-
-        public void IsSequenceCorrect(string id)
+      
+        public bool IsSequenceCorrect(string id)
         {
             try
             {
+                //This method is abit harder to test,Infact id say uncessecary if the check date method passes.
+                //cause by default it shouldnt be hit if the date check fails.
+                //Because if the date is in the wrong format the date check would fail so they would be no need to check the sequence,
+                //This method will always be true. Provide the date is and gender is write
+                //Iv kept it in because its one of the checks they do on ID. but its not really neccessary i think.
+                BreakDownId(id);
                 if (id.LastIndexOf(_id.Gender, StringComparison.Ordinal) <
                     id.LastIndexOf(_id.Date, StringComparison.Ordinal))
-                    _errorList.Add(ErrorList.IncorrectSequenceForDateOfBirth.ToString());
+                {
+                    _errorList.Add(new ErrorLists { error = ErrorList.IncorrectSequenceForDateOfBirth.ToString() });
+                    return false;
+                }
+                else return true;
             }
+                   
             catch (Exception ex)
             {
                 Logger.Fatal(ex);
@@ -146,9 +194,9 @@ namespace MyValidatorService.Models
         // Stored in a property 'id'.  
         // Returns: the valid digit between 0 and 9, or  
         // -1 if the method fails.
-        // from http://geekswithblogs.net/willemf/archive/2005/10/30/58561.aspx
-        public void ControlDigitTest(string id)
+        public bool ControlDigitTest(string id)
         {
+            BreakDownId(id);
             var d = -1;
             try
             {
@@ -177,12 +225,15 @@ namespace MyValidatorService.Models
                 {
                     if (!int.Parse(_id.ControlDigit).Equals(d))
                     {
-                        _errorList.Add(ErrorList.IdFailedControlDigitTest.ToString());
+                        _errorList.Add(new ErrorLists { error = ErrorList.IdFailedControlDigitTest.ToString() });
+                        return false;
                     }
+                    else return true;
                 }
                 else
                 {
-                    _errorList.Add(ErrorList.IncorrectLastDigit.ToString());
+                    _errorList.Add(new ErrorLists { error = ErrorList.IncorrectLastDigit.ToString() });
+                    return false;
                 }
             }
             catch (Exception ex)

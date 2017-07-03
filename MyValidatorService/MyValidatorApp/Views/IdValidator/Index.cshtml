@@ -1,0 +1,78 @@
+﻿@using System.Diagnostics
+@using MyValidatorApp.Models
+@using MyValidatorApp.ViewModel;
+
+
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+
+<html action="#">
+
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Index</title>
+</head>
+<body>
+    <div>
+        <h2>Please Enter ID Number</h2>
+    </div>
+    <div>
+        @model MyValidatorApp.ViewModel.IdValidatorModel
+        @using (Html.BeginForm("Index", "IdValidator"))
+        {
+            @Html.TextBoxFor(x => x.IdNumber, new { type = "number", required = "required" })
+            @Html.ValidationMessageFor(x => x.IdNumber)
+            <br />
+            <div>
+                <input type="submit" />
+            </div>
+
+
+        }
+
+    </div>
+    <br />
+    <br />
+    <table cellpadding="2" cellspacing="2" border="1">
+        <tr>
+            <th>IdNumber</th>
+            <th>DateOfBirth</th>
+            <th>Gender</th>
+            <th>Citizenship</th>
+        </tr>
+        @foreach (var p in ViewBag.result)
+        {
+
+            <tr>
+                <td>@p.IdNumber</td>
+                <td>@p.DateOfBirth</td>
+                <td>@p.Gender</td>
+                <td>@p.Citizenship</td>
+            </tr>
+        }
+    </table>
+
+    <div name="Errors">
+        <ul>
+            @foreach (var error in ViewBag.Error)
+            {
+                <li>@error</li>
+            }
+        </ul>
+    </div>
+    <style>
+        li::marker {
+            color: black; /* bullet color */
+        }
+
+        li {
+            color: red; /* text color */
+        }
+    </style>
+
+
+
+</body>
+</html>
